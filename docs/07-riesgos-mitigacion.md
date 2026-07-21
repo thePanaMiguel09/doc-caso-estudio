@@ -50,7 +50,45 @@ Se aplica el enfoque de exposición al riesgo, donde **Exposición = Probabilida
 
 ---
 
-## 2. Matriz de exposición
+## 2. Tabla de riesgos
+
+Registro consolidado ordenado por nivel de riesgo descendente. El detalle de cada riesgo —causas, acciones de mitigación, indicador de alerta temprana y plan de contingencia— se desarrolla en la [sección 4](#4-registro-detallado-de-riesgos).
+
+| ID | Riesgo | Probabilidad | Impacto | Nivel de Riesgo | Estrategia de Mitigación | Responsable |
+|---|---|---|---|---|---|---|
+| **R-01** | [Saturación del módulo de Matrícula durante el pico](#r-01--saturación-del-módulo-de-matrícula-durante-el-pico) | Alta (4) | Mayor (4) | 🔴 **Crítico (16)** | **Mitigar** — Limitación de tasa en el Gateway, autoescalado hasta 40 instancias, aprovisionamiento previo programado y pruebas de carga al doble de la concurrencia esperada | Equipo de Plataforma |
+| **R-02** | [Indisponibilidad prolongada de la pasarela de pagos](#r-02--indisponibilidad-prolongada-de-la-pasarela-de-pagos) | Alta (4) | Mayor (4) | 🔴 **Crítico (16)** | **Mitigar y transferir** — Circuit Breaker con fallo rápido, modo degradado con cupo provisional de 72 h, reconciliación asíncrona y acuerdo de nivel de servicio con el proveedor | Equipo de Plataforma · Personal de Tesorería |
+| **R-03** | [Doble cobro por reintentos](#r-03--doble-cobro-por-reintentos) | Media (3) | Catastrófico (5) | 🔴 **Crítico (15)** | **Evitar** — Clave de idempotencia verificada antes de crear cualquier registro, estado `INDETERMINADA` resuelto por conciliación y conciliación diaria contra el extracto | Equipo de Desarrollo (Integración) · Personal de Tesorería |
+| **R-04** | [Fuga de cupos por matrículas no reconciliadas](#r-04--fuga-de-cupos-por-matrículas-no-reconciliadas) | Media (3) | Mayor (4) | 🟠 **Alto (12)** | **Mitigar** — Vencimiento obligatorio de 72 h en toda reserva provisional y proceso de expiración independiente del flujo de reconciliación | Coordinador Académico · Equipo de Plataforma |
+| **R-05** | [Erosión arquitectónica](#r-05--erosión-arquitectónica) | Alta (4) | Moderado (3) | 🟠 **Alto (12)** | **Evitar** — Ocho reglas de dependencia ejecutadas como pruebas que fallan el build, más reglas de red que hacen imposible el acceso cruzado a bases de datos | Equipo de Desarrollo · Líder técnico |
+| **R-06** | [Monolito distribuido por crecimiento de la biblioteca compartida](#r-06--monolito-distribuido-por-crecimiento-de-la-biblioteca-compartida) | Media (3) | Mayor (4) | 🟠 **Alto (12)** | **Evitar** — Regla R5 verificada en integración continua, versionado semántico de las bibliotecas y revisión obligatoria de todo cambio en `shared/` | Líder técnico |
+| **R-14** | [Coexistencia con el sistema heredado](#r-14--coexistencia-con-el-sistema-heredado) | Alta (4) | Moderado (3) | 🟠 **Alto (12)** | **Mitigar** — Migración por módulo comenzando por Identidad, consulta de solo lectura al sistema antiguo mediante adaptador y fecha de corte por tipo de dato | Líder de proyecto · Product Owner |
+| **R-07** | [Fuga de datos personales](#r-07--fuga-de-datos-personales) | Baja (2) | Catastrófico (5) | 🟠 **Alto (10)** | **Mitigar** — Segmentación de red en tres niveles, base de datos por módulo, cifrado en tránsito y reposo, gestor de secretos y auditoría de todo acceso | Administrador de Identidad y Seguridad |
+| **R-08** | [Escalada de privilegios por configuración RBAC incorrecta](#r-08--escalada-de-privilegios-por-configuración-rbac-incorrecta) | Baja (2) | Catastrófico (5) | 🟠 **Alto (10)** | **Mitigar** — Autorización centralizada en el Gateway, denegación por omisión, auditoría automática y pruebas de autorización por rol en el pipeline | Administrador de Identidad y Seguridad |
+| **R-16** | [Indisponibilidad del proveedor de identidad OIDC](#r-16--indisponibilidad-del-proveedor-de-identidad-oidc) | Baja (2) | Catastrófico (5) | 🟠 **Alto (10)** | **Mitigar** — Caché de sesiones activas, tokens de refresco extendidos, alerta anticipada de vencimiento de certificados y procedimiento de emergencia | Administrador de Identidad y Seguridad |
+| **R-09** | [Inconsistencia entre módulos por comunicación asíncrona](#r-09--inconsistencia-entre-módulos-por-comunicación-asíncrona) | Media (3) | Moderado (3) | 🟡 **Medio (9)** | **Mitigar y aceptar parcialmente** — Consumidores idempotentes, marca de última actualización visible en los paneles y reconstrucción de proyecciones desde el histórico | Equipo de Desarrollo (Integración) |
+| **R-10** | [Dependencia del proveedor cloud](#r-10--dependencia-del-proveedor-cloud) | Media (3) | Moderado (3) | 🟡 **Medio (9)** | **Aceptar con mitigación parcial** — Estándares abiertos donde no hay penalización, dominio sin dependencia de la plataforma e infraestructura como código versionada | Alta Dirección · Equipo de Plataforma |
+| **R-15** | [Reglas incompletas de detección de conflictos de programación](#r-15--reglas-incompletas-de-detección-de-conflictos-de-programación) | Media (3) | Moderado (3) | 🟡 **Medio (9)** | **Mitigar** — Detectores en el dominio probados exhaustivamente, clasificación de conflictos por severidad y canal de retroalimentación docente | Coordinador Académico · Equipo de Desarrollo (Académico) |
+| **R-18** | [Rotación del equipo de desarrollo](#r-18--rotación-del-equipo-de-desarrollo) | Media (3) | Moderado (3) | 🟡 **Medio (9)** | **Mitigar** — Uniformidad estructural entre módulos, registro de decisiones que preserva el porqué y prohibición de propiedad exclusiva de un módulo | Líder de proyecto |
+| **R-13** | [Curva de aprendizaje del equipo](#r-13--curva-de-aprendizaje-del-equipo) | Alta (4) | Menor (2) | 🟡 **Medio (8)** | **Mitigar** — Plantilla interna idéntica en los cinco módulos, documentación como material de incorporación y desarrollo conjunto del primer módulo | Líder de proyecto |
+| **R-17** | [Pérdida de mensajes en la cola](#r-17--pérdida-de-mensajes-en-la-cola) | Baja (2) | Mayor (4) | 🟡 **Medio (8)** | **Mitigar** — Cola de mensajes fallidos, confirmación explícita tras procesar y proceso de expiración programado como red de seguridad | Equipo de Plataforma |
+| **R-12** | [Sobrecosto por autoescalado sin control](#r-12--sobrecosto-por-autoescalado-sin-control) | Media (3) | Menor (2) | 🟡 **Medio (6)** | **Mitigar** — Límite máximo explícito por módulo, limitación de tasa en el Gateway y alertas de presupuesto al 50 %, 80 % y 100 % | Equipo de Plataforma · Alta Dirección |
+| **R-11** | [Corrupción lógica replicada a las réplicas](#r-11--corrupción-lógica-replicada-a-las-réplicas) | Muy baja (1) | Catastrófico (5) | 🟡 **Medio (5)** | **Mitigar** — Recuperación a punto en el tiempo, copia geográfica con retención de 12 meses, migraciones reversibles y verificaciones de integridad | Equipo de Plataforma |
+
+### Distribución del registro
+
+| Nivel de riesgo | Cantidad | Riesgos |
+|---|---|---|
+| 🔴 Crítico (16 – 25) | 3 | R-01, R-02, R-03 |
+| 🟠 Alto (10 – 15) | 7 | R-04, R-05, R-06, R-07, R-08, R-14, R-16 |
+| 🟡 Medio (5 – 9) | 8 | R-09, R-10, R-11, R-12, R-13, R-15, R-17, R-18 |
+| 🟢 Bajo (1 – 4) | 0 | — |
+
+Los tres riesgos de nivel crítico tienen **mitigación estructural incorporada en la arquitectura**: no dependen de acciones operativas posteriores al despliegue ni de que alguien recuerde ejecutar un procedimiento.
+
+---
+
+## 3. Matriz de exposición
 
 ```mermaid
 quadrantChart
@@ -85,7 +123,11 @@ quadrantChart
 
 ---
 
-## 3. Registro de riesgos
+## 4. Registro detallado de riesgos
+
+La [Tabla de riesgos](#2-tabla-de-riesgos) resume los dieciocho registros. Esta sección desarrolla cada uno con la información que una tabla no puede contener: las **causas** que lo originan, las acciones concretas de mitigación con su vínculo a la decisión arquitectónica correspondiente, el **indicador de alerta temprana** que permite detectarlo antes de que se materialice, y el **plan de contingencia** aplicable si aun así ocurre.
+
+Cada indicador de alerta temprana se implementa como alerta en la consola de observabilidad, lo que hace verificable el requisito de detección de incidentes en menos de cinco minutos.
 
 ### Categoría A · Riesgos de disponibilidad y rendimiento
 
@@ -651,35 +693,6 @@ quadrantChart
 **Plan de contingencia.** Reducción manual del límite máximo; activación de limitación de tasa más estricta; análisis del origen del tráfico anómalo.
 
 **Responsable.** Equipo de Plataforma y Alta Dirección.
-
----
-
-## 4. Resumen del registro
-
-| ID | Riesgo | P | I | Exposición | Estrategia |
-|---|---|---|---|---|---|
-| R-01 | Saturación del módulo de Matrícula | 4 | 4 | 🔴 16 | Mitigar |
-| R-02 | Indisponibilidad de la pasarela de pagos | 4 | 4 | 🔴 16 | Mitigar y transferir |
-| R-03 | Doble cobro por reintentos | 3 | 5 | 🔴 15 | Evitar |
-| R-04 | Fuga de cupos no reconciliados | 3 | 4 | 🟠 12 | Mitigar |
-| R-05 | Erosión arquitectónica | 4 | 3 | 🟠 12 | Evitar |
-| R-06 | Monolito distribuido | 3 | 4 | 🟠 12 | Evitar |
-| R-14 | Coexistencia con el sistema heredado | 4 | 3 | 🟠 12 | Mitigar |
-| R-07 | Fuga de datos personales | 2 | 5 | 🟠 10 | Mitigar |
-| R-08 | Escalada de privilegios | 2 | 5 | 🟠 10 | Mitigar |
-| R-16 | Indisponibilidad del proveedor OIDC | 2 | 5 | 🟠 10 | Mitigar |
-| R-09 | Inconsistencia entre módulos | 3 | 3 | 🟡 9 | Mitigar y aceptar |
-| R-10 | Dependencia del proveedor cloud | 3 | 3 | 🟡 9 | Aceptar con mitigación |
-| R-15 | Reglas de conflicto incompletas | 3 | 3 | 🟡 9 | Mitigar |
-| R-18 | Rotación del equipo | 3 | 3 | 🟡 9 | Mitigar |
-| R-13 | Curva de aprendizaje | 4 | 2 | 🟡 8 | Mitigar |
-| R-17 | Pérdida de mensajes en la cola | 2 | 4 | 🟡 8 | Mitigar |
-| R-12 | Sobrecosto de autoescalado | 3 | 2 | 🟡 6 | Mitigar |
-| R-11 | Corrupción lógica replicada | 1 | 5 | 🟡 5 | Mitigar |
-
-**Distribución:** 3 riesgos críticos · 7 altos · 8 medios · 0 bajos.
-
-Los tres riesgos críticos —R-01, R-02 y R-03— tienen mitigación estructural incorporada en la arquitectura y no dependen de acciones operativas posteriores al despliegue.
 
 ---
 
