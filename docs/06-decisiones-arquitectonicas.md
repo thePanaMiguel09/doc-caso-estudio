@@ -23,26 +23,63 @@ Una decisión arquitectónica se registra aquí cuando es **costosa de revertir*
 
 ---
 
-## Índice de decisiones
+## Tabla 1 · Decisiones arquitectónicas, problema que resuelven y atributos de calidad
 
-| ID | Decisión | Estado | Requisitos |
-|---|---|---|---|
-| [ADR-001](#adr-001--arquitectura-soa-modular-en-lugar-de-microservicios-completos) | Arquitectura SOA modular en lugar de microservicios completos | ✅ | Todos |
-| [ADR-002](#adr-002--plataforma-paas-gestionada-en-lugar-de-orquestación-propia) | Plataforma PaaS gestionada en lugar de orquestación propia | ✅ | RNF-01, RNF-02 |
-| [ADR-003](#adr-003--una-base-de-datos-por-módulo) | Una base de datos por módulo | ✅ | RNF-01, RNF-03 |
-| [ADR-004](#adr-004--api-gateway-como-único-punto-de-autenticación) | API Gateway como único punto de autenticación | ✅ | RF-01, RNF-03 |
-| [ADR-005](#adr-005--comunicación-híbrida-rest-síncrono-y-cola-asíncrona) | Comunicación híbrida REST síncrono y cola asíncrona | ✅ | RF-04, RNF-04 |
-| [ADR-006](#adr-006--arquitectura-hexagonal-uniforme-en-los-cinco-módulos) | Arquitectura hexagonal uniforme en los cinco módulos | ✅ | RNF-05 |
-| [ADR-007](#adr-007--verificación-financiera-obligatoria-en-el-flujo-de-matrícula) | Verificación financiera obligatoria en el flujo de matrícula | ✅ | RF-02 |
-| [ADR-008](#adr-008--modo-degradado-con-cupo-provisional-ante-fallo-externo) | Modo degradado con cupo provisional ante fallo externo | ✅ | RNF-01, RNF-04 |
-| [ADR-009](#adr-009--idempotencia-obligatoria-en-operaciones-de-escritura) | Idempotencia obligatoria en operaciones de escritura | ✅ | RNF-04 |
-| [ADR-010](#adr-010--bloqueo-optimista-para-el-control-de-cupos) | Bloqueo optimista para el control de cupos | ✅ | RNF-02 |
-| [ADR-011](#adr-011--circuit-breaker-centralizado-en-biblioteca-compartida) | Circuit Breaker centralizado en biblioteca compartida | ✅ | RNF-04 |
-| [ADR-012](#adr-012--despliegue-activo-activo-con-primaria-única-de-escritura) | Despliegue activo-activo con primaria única de escritura | ✅ | RNF-01, RNF-04 |
-| [ADR-013](#adr-013--segmentación-de-red-en-tres-niveles) | Segmentación de red en tres niveles | ✅ | RNF-03 |
-| [ADR-014](#adr-014--reglas-de-dependencia-verificadas-en-integración-continua) | Reglas de dependencia verificadas en integración continua | ✅ | RNF-05 |
-| [ADR-015](#adr-015--proyecciones-de-lectura-dirigidas-por-eventos-para-analítica) | Proyecciones de lectura dirigidas por eventos para analítica | ✅ | RF-05, RNF-02 |
-| [ADR-016](#adr-016--modo-degradado-asimétrico-según-el-costo-del-error) | Modo degradado asimétrico según el costo del error | ✅ | RF-05, RNF-04 |
+Los atributos de calidad se nombran conforme a la norma ISO/IEC 25010:2011, la misma referencia empleada para clasificar los requisitos no funcionales del proyecto.
+
+| ID | Decisión Arquitectónica | Problema que resuelve | Justificación | Atributos de calidad favorecidos |
+|---|---|---|---|---|
+| **ADR-001** | [Arquitectura SOA modular en lugar de microservicios completos](#adr-001--arquitectura-soa-modular-en-lugar-de-microservicios-completos) | Acoplamiento estructural del sistema heredado: cualquier cambio obliga a probar y desplegar la aplicación completa | La granularidad gruesa (cinco módulos por capacidad de negocio) elimina el acoplamiento sin imponer la complejidad operativa de los microservicios, desproporcionada para el equipo de plataforma de la institución | Modificabilidad · Escalabilidad · Mantenibilidad |
+| **ADR-002** | [Plataforma PaaS gestionada en lugar de orquestación propia](#adr-002--plataforma-paas-gestionada-en-lugar-de-orquestación-propia) | Costos fijos de infraestructura dimensionada para el pico máximo y ausencia de escalado elástico | Los mecanismos de alta disponibilidad, autoescalado y replicación se obtienen como servicios gestionados, reduciendo la complejidad operativa sin sacrificar los atributos de calidad prioritarios | Escalabilidad · Disponibilidad · Eficiencia de recursos |
+| **ADR-003** | [Una base de datos por módulo](#adr-003--una-base-de-datos-por-módulo) | Superficie de seguridad concentrada en un único esquema con datos académicos, financieros y personales | Fragmentar el almacenamiento acota el impacto de una vulnerabilidad explotada y permite que cada módulo evolucione su esquema sin coordinar con los demás | Seguridad (confidencialidad) · Modificabilidad · Disponibilidad |
+| **ADR-004** | [API Gateway como único punto de autenticación](#adr-004--api-gateway-como-único-punto-de-autenticación) | Riesgo de cinco implementaciones divergentes de validación de token y de política RBAC | Una política única y auditable garantiza que la solicitud no autorizada sea rechazada antes de alcanzar el módulo, sin exponer datos y con registro automático de auditoría | Seguridad (autenticidad y responsabilidad) · Mantenibilidad |
+| **ADR-005** | [Comunicación híbrida REST síncrono y cola asíncrona](#adr-005--comunicación-híbrida-rest-síncrono-y-cola-asíncrona) | Acoplamiento de disponibilidad entre módulos: un fallo del canal de notificación impediría registrar calificaciones | Cada interacción usa el mecanismo adecuado a su naturaleza: síncrono cuando el emisor necesita la respuesta, asíncrono cuando no depende del resultado | Resiliencia · Disponibilidad · Modificabilidad |
+| **ADR-006** | [Arquitectura hexagonal uniforme en los cinco módulos](#adr-006--arquitectura-hexagonal-uniforme-en-los-cinco-módulos) | Rigidez para integrar terceros y heterogeneidad estructural entre módulos desarrollados en paralelo | El dominio sin dependencias externas permite probar las reglas de negocio sin infraestructura, y sustituir un proveedor se reduce a escribir una clase de adaptador | Testabilidad · Modificabilidad · Mantenibilidad |
+| **ADR-007** | [Verificación financiera obligatoria en el flujo de matrícula](#adr-007--verificación-financiera-obligatoria-en-el-flujo-de-matrícula) | Desconexión académico-financiera resuelta con validaciones manuales dependientes del personal disponible | Modelarla como relación obligatoria e incondicional elimina por diseño la validación manual: no existe camino de ejecución que confirme una matrícula sin pasar por ella | Corrección funcional · Integridad · Auditabilidad |
+| **ADR-008** | [Modo degradado con cupo provisional ante fallo externo](#adr-008--modo-degradado-con-cupo-provisional-ante-fallo-externo) | Dependencia síncrona hacia la pasarela de pagos en el camino crítico de la operación más concurrida del año | El cupo provisional con vencimiento protege al estudiante del fallo ajeno y a la institución del abuso, evitando que la disponibilidad de la plataforma quede acoplada a la de un tercero | Disponibilidad · Resiliencia · Tolerancia a fallos |
+| **ADR-009** | [Idempotencia obligatoria en operaciones de escritura](#adr-009--idempotencia-obligatoria-en-operaciones-de-escritura) | La política de reintentos exigida por la resiliencia produce doble cobro y matrículas duplicadas | La clave verificada antes de crear cualquier registro garantiza que N envíos idénticos generen una sola matrícula y un solo cobro, habilitando reintentos seguros en toda la cadena | Integridad · Resiliencia · Corrección funcional |
+| **ADR-010** | [Bloqueo optimista para el control de cupos](#adr-010--bloqueo-optimista-para-el-control-de-cupos) | Contención por el último cupo de un grupo bajo 15.000 usuarios concurrentes | Las lecturas ocurren en paralelo y solo la escritura final se serializa, evitando la fila de espera que un bloqueo pesimista impondría a toda la asignatura | Rendimiento · Escalabilidad · Integridad |
+| **ADR-011** | [Circuit Breaker centralizado en biblioteca compartida](#adr-011--circuit-breaker-centralizado-en-biblioteca-compartida) | Efecto dominó: los tiempos de espera hacia un tercero caído agotan el pool de conexiones y afectan a funciones no relacionadas | Centralizar la política en una biblioteca compartida la hace uniforme y auditable, e impide que un desarrollador omita la protección; el fail-fast protege a la plataforma del tercero, no al revés | Resiliencia · Disponibilidad · Mantenibilidad |
+| **ADR-012** | [Despliegue activo-activo con primaria única de escritura](#adr-012--despliegue-activo-activo-con-primaria-única-de-escritura) | Cumplimiento simultáneo de disponibilidad ≥ 99,9 %, RTO < 30 min y RPO < 15 min sin sacrificar consistencia | La configuración activo-activo evita que la zona de respaldo esté fría y no probada; la primaria única impide los conflictos de reserva irresolubles que produciría un esquema multi-maestro | Disponibilidad · Resiliencia · Recuperabilidad |
+| **ADR-013** | [Segmentación de red en tres niveles](#adr-013--segmentación-de-red-en-tres-niveles) | La confianza de los módulos en la identidad validada por el borde solo es segura si ningún módulo es alcanzable desde Internet | Convierte reglas de código en imposibilidades físicas: aunque se publicara un endpoint sin autenticación, no sería alcanzable, y ningún módulo puede acceder a la base de datos de otro | Seguridad (confidencialidad e integridad) |
+| **ADR-014** | [Reglas de dependencia verificadas en integración continua](#adr-014--reglas-de-dependencia-verificadas-en-integración-continua) | Erosión arquitectónica por atajos razonables bajo la presión de entrega del periodo de matrícula | Un test que falla es la única barrera que sobrevive a un viernes por la tarde; la arquitectura se vuelve ejecutable y verificable, no solo declarativa | Mantenibilidad · Analizabilidad · Modificabilidad |
+| **ADR-015** | [Proyecciones de lectura dirigidas por eventos para analítica](#adr-015--proyecciones-de-lectura-dirigidas-por-eventos-para-analítica) | Los paneles directivos requieren datos de cuatro módulos, pero las consultas cruzadas están prohibidas y competirían con la operación durante el pico | Las proyecciones alimentadas por eventos respetan la frontera de datos por módulo y evitan que la analítica compita por recursos con la operación transaccional | Rendimiento · Escalabilidad · Modificabilidad |
+| **ADR-016** | [Modo degradado asimétrico según el costo del error](#adr-016--modo-degradado-asimétrico-según-el-costo-del-error) | Aplicar el modo degradado uniformemente produciría certificados oficiales emitidos sobre información no verificada | El modo degradado se concede según el costo del error: una matrícula provisional se reconcilia sin daño, un documento oficial emitido indebidamente ya circuló y no puede retractarse | Integridad · Corrección funcional · Resiliencia |
+
+---
+
+## Tabla 2 · Decisiones arquitectónicas y requisitos que satisfacen
+
+| Decisión Arquitectónica | Requisitos que satisface |
+|---|---|
+| **ADR-001** · Arquitectura SOA modular en lugar de microservicios completos | RF-03 · RNF-02 (escalabilidad) · RNF-05 (mantenibilidad) |
+| **ADR-002** · Plataforma PaaS gestionada en lugar de orquestación propia | RNF-01 (disponibilidad) · RNF-02 (escalabilidad) |
+| **ADR-003** · Una base de datos por módulo | RF-03 · RNF-01 (disponibilidad) · RNF-03 (seguridad) |
+| **ADR-004** · API Gateway como único punto de autenticación | RF-01 · RNF-03 (seguridad) |
+| **ADR-005** · Comunicación híbrida REST síncrono y cola asíncrona | RF-04 · RNF-04 (resiliencia) |
+| **ADR-006** · Arquitectura hexagonal uniforme en los cinco módulos | RF-05 · RNF-05 (mantenibilidad) |
+| **ADR-007** · Verificación financiera obligatoria en el flujo de matrícula | RF-02 |
+| **ADR-008** · Modo degradado con cupo provisional ante fallo externo | RF-02 · RNF-01 (disponibilidad) · RNF-04 (resiliencia) |
+| **ADR-009** · Idempotencia obligatoria en operaciones de escritura | RF-02 · RNF-04 (resiliencia) |
+| **ADR-010** · Bloqueo optimista para el control de cupos | RF-02 · RF-03 · RNF-02 (escalabilidad) |
+| **ADR-011** · Circuit Breaker centralizado en biblioteca compartida | RF-05 · RNF-01 (disponibilidad) · RNF-04 (resiliencia) |
+| **ADR-012** · Despliegue activo-activo con primaria única de escritura | RNF-01 (disponibilidad) · RNF-04 (resiliencia) |
+| **ADR-013** · Segmentación de red en tres niveles | RF-01 · RNF-03 (seguridad) |
+| **ADR-014** · Reglas de dependencia verificadas en integración continua | RNF-05 (mantenibilidad) |
+| **ADR-015** · Proyecciones de lectura dirigidas por eventos para analítica | RF-05 · RNF-02 (escalabilidad) |
+| **ADR-016** · Modo degradado asimétrico según el costo del error | RF-05 · RNF-04 (resiliencia) |
+
+**Verificación de cobertura.** Los cinco requisitos funcionales y los cinco no funcionales están cubiertos por al menos una decisión, y las dieciséis decisiones responden a al menos un requisito. No existen decisiones huérfanas ni requisitos sin sustento arquitectónico. La vista inversa —requisito hacia decisiones— se presenta en la [sección de trazabilidad](#trazabilidad-inversa-requisito-hacia-decisiones) al final del documento.
+
+---
+
+## Estado de las decisiones
+
+| ID | Decisión | Estado |
+|---|---|---|
+| ADR-001 … ADR-016 | Todas las decisiones registradas | ✅ Aceptadas y vigentes |
+
+Ninguna decisión ha sido sustituida ni rechazada hasta la fecha. Las [condiciones de reevaluación](#condiciones-de-reevaluación) que obligarían a revisar decisiones vigentes se detallan al final del documento.
 
 ---
 
@@ -102,6 +139,14 @@ flowchart TB
 ```
 
 **Lectura del mapa.** Las tres decisiones fundacionales —ADR-001, ADR-002 y ADR-003— sostienen a todas las demás. Revertir cualquiera de ellas invalidaría buena parte del registro. Las decisiones periféricas, como ADR-016, pueden reconsiderarse sin efecto sobre el resto.
+
+---
+
+## Registro detallado de decisiones
+
+Las tablas anteriores resumen las dieciséis decisiones. Esta sección desarrolla cada una en formato ADR completo: el contexto que la motivó, **las alternativas evaluadas y el motivo de su descarte**, y las consecuencias tanto favorables como desfavorables que acarrea.
+
+El registro de las alternativas descartadas cumple una función específica: evita que un equipo futuro reabra un debate ya resuelto sin conocer las razones del descarte. El registro de las consecuencias desfavorables cumple otra: ninguna decisión arquitectónica es gratuita, y ocultar su costo impide evaluarla con honestidad.
 
 ---
 
@@ -822,7 +867,9 @@ El modo degradado se concede **en función del costo del error**, no de la conve
 
 ---
 
-## Trazabilidad decisión ↔ requisito
+## Trazabilidad inversa: requisito hacia decisiones
+
+Vista complementaria a la [Tabla 2](#tabla-2--decisiones-arquitectónicas-y-requisitos-que-satisfacen). Mientras aquella responde *"¿qué requisitos satisface esta decisión?"*, esta responde *"¿qué decisiones sostienen este requisito?"*, que es la lectura necesaria para verificar que ningún requisito quedó sin sustento.
 
 | Requisito | Decisiones que lo satisfacen |
 |---|---|
