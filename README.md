@@ -14,7 +14,9 @@
 
 ---
 
-## Índice de vistas
+## Índice
+
+### Vistas arquitectónicas (modelo 4+1)
 
 | Vista | Documento | Diagramas | Pregunta que responde |
 |---|---|---|---|
@@ -24,9 +26,49 @@
 | **3 · Desarrollo** | [04-vista-desarrollo.md](docs/04-vista-desarrollo.md) | 9 | ¿Cómo se organiza el código? |
 | **4 · Física** | [05-vista-fisica.md](docs/05-vista-fisica.md) | 6 | ¿Dónde y cómo se despliega? |
 
-**Total: 47 diagramas en las cinco vistas**, más 1 diagrama de contexto en este documento: **48 en total**. Todos los módulos del sistema están documentados con el mismo nivel de detalle.
+### Documentación complementaria
 
-> Los 48 diagramas fueron validados con el parser oficial de Mermaid v11 antes de su publicación: 48 válidos, 0 con error.
+| Documento | Contenido | Pregunta que responde |
+|---|---|---|
+| **Decisiones Arquitectónicas** | [06-decisiones-arquitectonicas.md](docs/06-decisiones-arquitectonicas.md) | 16 ADR + mapa de dependencias | ¿Por qué se decidió así y qué se descartó? |
+| **Riesgos y Mitigación** | [07-riesgos-mitigacion.md](docs/07-riesgos-mitigacion.md) | 18 riesgos + matriz de exposición | ¿Qué puede salir mal y cómo se controla? |
+
+**Total: 53 diagramas.** Todos los módulos del sistema están documentados con el mismo nivel de detalle.
+
+> Los diagramas fueron validados con el parser oficial de Mermaid v11 antes de su publicación: 53 válidos, 0 con error.
+
+### Cómo se relacionan los documentos
+
+```mermaid
+flowchart LR
+    UC["<b>Casos de Uso</b><br/><i>qué debe hacer</i>"]:::v
+    LOG["<b>Lógica</b><br/><i>con qué objetos</i>"]:::v
+    PRO["<b>Procesos</b><br/><i>en qué orden</i>"]:::v
+    DEV["<b>Desarrollo</b><br/><i>cómo se organiza</i>"]:::v
+    FIS["<b>Física</b><br/><i>dónde se ejecuta</i>"]:::v
+
+    ADR["<b>Decisiones</b><br/><i>por qué se eligió</i>"]:::c
+    RSK["<b>Riesgos</b><br/><i>qué puede fallar</i>"]:::c
+
+    UC --> LOG
+    UC --> PRO
+    UC --> DEV
+    UC --> FIS
+    LOG -.-> PRO
+    DEV -.-> FIS
+
+    ADR -.justifica.-> LOG
+    ADR -.justifica.-> PRO
+    ADR -.justifica.-> DEV
+    ADR -.justifica.-> FIS
+    RSK -.amenaza.-> ADR
+    ADR -.mitiga.-> RSK
+
+    classDef v fill:#E6F4EA,stroke:#137333,color:#000
+    classDef c fill:#FEF7E0,stroke:#EA8600,stroke-width:2px,color:#000
+```
+
+Las cinco vistas describen **qué es** el sistema. El registro de decisiones explica **por qué es así** y qué alternativas se descartaron. El registro de riesgos identifica **qué lo amenaza** y vincula cada amenaza con la decisión que la contiene.
 
 ---
 
@@ -83,14 +125,14 @@ flowchart LR
 
 ## Problemas del sistema heredado que la arquitectura resuelve
 
-| Problema heredado | Decisión arquitectónica | Vista donde se evidencia |
-|---|---|---|
-| Acoplamiento estructural | Módulos desplegables por separado | [Desarrollo](docs/04-vista-desarrollo.md) |
-| Fragilidad ante picos | Autoescalado independiente por módulo | [Física](docs/05-vista-fisica.md) |
-| Superficie de seguridad concentrada | Gateway único + segmentación de red + BD por módulo | [Física](docs/05-vista-fisica.md) |
-| Desconexión académico-financiera | Verificación financiera obligatoria en el flujo de matrícula | [Procesos](docs/03-vista-procesos.md) |
-| Rigidez para integrar terceros | Adaptadores desacoplados tras puertos del dominio | [Desarrollo](docs/04-vista-desarrollo.md) |
-| Costos fijos de infraestructura | PaaS con escalado elástico | [Física](docs/05-vista-fisica.md) |
+| Problema heredado | Decisión arquitectónica | Decisión registrada | Vista |
+|---|---|---|---|
+| Acoplamiento estructural | Módulos desplegables por separado | [ADR-001](docs/06-decisiones-arquitectonicas.md#adr-001--arquitectura-soa-modular-en-lugar-de-microservicios-completos) | [Desarrollo](docs/04-vista-desarrollo.md) |
+| Fragilidad ante picos | Autoescalado independiente por módulo | [ADR-002](docs/06-decisiones-arquitectonicas.md#adr-002--plataforma-paas-gestionada-en-lugar-de-orquestación-propia) | [Física](docs/05-vista-fisica.md) |
+| Superficie de seguridad concentrada | Gateway único, segmentación de red, BD por módulo | [ADR-003](docs/06-decisiones-arquitectonicas.md#adr-003--una-base-de-datos-por-módulo) · [ADR-013](docs/06-decisiones-arquitectonicas.md#adr-013--segmentación-de-red-en-tres-niveles) | [Física](docs/05-vista-fisica.md) |
+| Desconexión académico-financiera | Verificación financiera obligatoria en la matrícula | [ADR-007](docs/06-decisiones-arquitectonicas.md#adr-007--verificación-financiera-obligatoria-en-el-flujo-de-matrícula) | [Procesos](docs/03-vista-procesos.md) |
+| Rigidez para integrar terceros | Adaptadores desacoplados tras puertos del dominio | [ADR-006](docs/06-decisiones-arquitectonicas.md#adr-006--arquitectura-hexagonal-uniforme-en-los-cinco-módulos) | [Desarrollo](docs/04-vista-desarrollo.md) |
+| Costos fijos de infraestructura | PaaS con escalado elástico | [ADR-002](docs/06-decisiones-arquitectonicas.md#adr-002--plataforma-paas-gestionada-en-lugar-de-orquestación-propia) | [Física](docs/05-vista-fisica.md) |
 
 ---
 
@@ -151,20 +193,39 @@ flowchart LR
 | RNF-04 | UC-12 | `CircuitBreaker` | Reconciliación asíncrona | `shared.rest` | Réplica síncrona |
 | RNF-05 | UC-36 | — | Bucle de observabilidad | `shared.observability` | Servicio regional |
 
+### Trazabilidad hacia decisiones y riesgos
+
+| Requisito | Decisiones que lo sustentan | Riesgos que lo amenazan |
+|---|---|---|
+| RF-01 | ADR-004, ADR-013 | R-08, R-16 |
+| RF-02 | ADR-007, ADR-008, ADR-009, ADR-010 | R-01, R-02, R-04 |
+| RF-03 | ADR-001, ADR-003, ADR-010 | R-15 |
+| RF-04 | ADR-005 | R-17 |
+| RF-05 | ADR-006, ADR-011, ADR-015, ADR-016 | R-02, R-03, R-09 |
+| RNF-01 | ADR-002, ADR-008, ADR-011, ADR-012 | R-01, R-02, R-16 |
+| RNF-02 | ADR-001, ADR-002, ADR-010, ADR-015 | R-01, R-12 |
+| RNF-03 | ADR-003, ADR-004, ADR-013 | R-07, R-08 |
+| RNF-04 | ADR-005, ADR-008, ADR-009, ADR-011, ADR-012 | R-03, R-11, R-17 |
+| RNF-05 | ADR-006, ADR-014 | R-05, R-06, R-13, R-18 |
+
+**Verificación:** los diez requisitos tienen al menos una decisión que los sustenta y al menos un riesgo identificado. No hay decisiones huérfanas ni riesgos sin vínculo con un requisito.
+
 ---
 
 ## Estructura del repositorio
 
 ```
 doc-caso-estudio/
-├── README.md                       ← este documento
-├── CASO_DE_ESTUDIO (1).md          ← documento fuente (SAD)
+├── README.md                            ← este documento
+├── CASO_DE_ESTUDIO (1).md               ← documento fuente (SAD)
 └── docs/
-    ├── 01-vista-casos-uso.md       ← Vista +1
-    ├── 02-vista-logica.md          ← Vista 1
-    ├── 03-vista-procesos.md        ← Vista 2
-    ├── 04-vista-desarrollo.md      ← Vista 3
-    └── 05-vista-fisica.md          ← Vista 4
+    ├── 01-vista-casos-uso.md            ← Vista +1
+    ├── 02-vista-logica.md               ← Vista 1
+    ├── 03-vista-procesos.md             ← Vista 2
+    ├── 04-vista-desarrollo.md           ← Vista 3
+    ├── 05-vista-fisica.md               ← Vista 4
+    ├── 06-decisiones-arquitectonicas.md ← Registro de decisiones (ADR)
+    └── 07-riesgos-mitigacion.md         ← Registro de riesgos
 ```
 
 ---

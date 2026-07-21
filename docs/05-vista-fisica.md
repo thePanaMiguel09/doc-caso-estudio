@@ -607,10 +607,15 @@ sequenceDiagram
 
 ## Cierre
 
-Las cinco vistas del modelo 4+1 quedan documentadas con **48 diagramas** y trazabilidad completa hacia los 5 requisitos funcionales, los 5 requisitos no funcionales y los 11 actores identificados. Cada decisión arquitectónica registrada en el documento fuente tiene al menos una representación gráfica verificable en alguna de las vistas.
+Las cinco vistas del modelo 4+1 quedan documentadas con trazabilidad completa hacia los 5 requisitos funcionales, los 5 requisitos no funcionales y los 11 actores identificados. Cada decisión arquitectónica registrada en el documento fuente tiene al menos una representación gráfica verificable en alguna de las vistas.
+
+La documentación se complementa con dos registros que explican el razonamiento detrás de la arquitectura:
+
+- **[Decisiones Arquitectónicas](06-decisiones-arquitectonicas.md)** — 16 decisiones registradas con su contexto, las alternativas descartadas y sus consecuencias favorables y desfavorables.
+- **[Riesgos y Mitigación](07-riesgos-mitigacion.md)** — 18 riesgos evaluados por exposición, cada uno vinculado con la decisión que lo mitiga y con su indicador de alerta temprana.
 
 ---
 
 | ← Anterior | Índice | Siguiente → |
 |---|---|---|
-| [Vista de Desarrollo](04-vista-desarrollo.md) | [README](../README.md) | — |
+| [Vista de Desarrollo](04-vista-desarrollo.md) | [README](../README.md) | [Decisiones Arquitectónicas](06-decisiones-arquitectonicas.md) |
