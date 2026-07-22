@@ -23,7 +23,7 @@
 | **+1 · Casos de Uso** | [01-vista-casos-uso.md](docs/01-vista-casos-uso.md) | 7 | ¿Quién usa el sistema y para qué? |
 | **1 · Lógica** | [02-vista-logica.md](docs/02-vista-logica.md) | 12 | ¿Qué objetos existen y cómo colaboran? |
 | **2 · Procesos** | [03-vista-procesos.md](docs/03-vista-procesos.md) | 13 | ¿Cómo fluye la ejecución y la concurrencia? |
-| **3 · Desarrollo** | [04-vista-desarrollo.md](docs/04-vista-desarrollo.md) | 9 | ¿Cómo se organiza el código? |
+| **3 · Desarrollo** | [04-vista-desarrollo.md](docs/04-vista-desarrollo.md) | 11 | ¿Cómo se organiza el código? |
 | **4 · Física** | [05-vista-fisica.md](docs/05-vista-fisica.md) | 6 | ¿Dónde y cómo se despliega? |
 
 ### Documentación complementaria
@@ -33,9 +33,9 @@
 | **Decisiones Arquitectónicas** | [06-decisiones-arquitectonicas.md](docs/06-decisiones-arquitectonicas.md) | 16 ADR + mapa de dependencias | ¿Por qué se decidió así y qué se descartó? |
 | **Riesgos y Mitigación** | [07-riesgos-mitigacion.md](docs/07-riesgos-mitigacion.md) | 18 riesgos + matriz de exposición | ¿Qué puede salir mal y cómo se controla? |
 
-**Total: 53 diagramas.** Todos los módulos del sistema están documentados con el mismo nivel de detalle.
+**Total: 55 diagramas.** Todos los módulos del sistema están documentados con el mismo nivel de detalle.
 
-> Los diagramas fueron validados con el parser oficial de Mermaid v11 antes de su publicación: 53 válidos, 0 con error.
+> Los diagramas fueron validados con el parser oficial de Mermaid v11 antes de su publicación: 55 válidos, 0 con error.
 
 ### Cómo se relacionan los documentos
 

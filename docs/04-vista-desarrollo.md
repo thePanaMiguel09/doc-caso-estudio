@@ -1,8 +1,23 @@
 # Vista 3 — Desarrollo
 
-> **Modelo 4+1 · Vista de Desarrollo.** Describe la organización estática del código: paquetes, componentes, interfaces, bibliotecas compartidas y dependencias de compilación. Su destinatario es el equipo de desarrollo y los ingenieros de plataforma.
+> **Modelo 4+1 · Vista de Desarrollo.** Describe la organización estática del código: capas, paquetes, componentes, interfaces y dependencias de compilación. Su destinatario es el equipo de desarrollo y los ingenieros de plataforma.
 
-**Cobertura:** 1 diagrama de capas · 5 estructuras internas de módulo · 1 diagrama de componentes · 1 de bibliotecas compartidas · 1 de reglas de dependencia. **Total: 9 diagramas.**
+**Cobertura:** los **4 diagramas exigidos por esta vista** (capas, paquetes, componentes y dependencias entre componentes), más 5 estructuras internas de módulo, 1 de bibliotecas compartidas y 1 de reglas de dependencia. **Total: 11 diagramas.**
+
+---
+
+## Los cuatro diagramas requeridos por esta vista
+
+Esta vista debe entregar cuatro diagramas. Cada uno está en su propia sección, con un único bloque Mermaid listo para copiar:
+
+| # | Diagrama requerido | Sección | Qué muestra |
+|---|---|---|---|
+| 1 | **Diagrama de capas** | [§1](#1-diagrama-de-capas) | Las cuatro capas de la arquitectura y la dirección de dependencia entre ellas |
+| 2 | **Diagrama de paquetes** | [§2](#2-diagrama-de-paquetes) | Los paquetes de código y sus relaciones de importación |
+| 3 | **Diagrama de componentes** | [§3](#3-diagrama-de-componentes) | Los componentes con sus interfaces provistas y requeridas |
+| 4 | **Diagrama de dependencias entre componentes** | [§4](#4-diagrama-de-dependencias-entre-componentes) | El grafo dirigido de dependencias, clasificado por tipo |
+
+Las secciones [§5](#5-estructura-interna--módulo-identidad-y-accesos-rf-01) a [§9](#9-estructura-interna--módulo-integración-externa-y-analítica-rf-05) detallan la estructura interna de cada módulo (arquitectura hexagonal) como complemento, y las secciones [§10](#10-bibliotecas-compartidas) a [§12](#12-organización-del-repositorio) documentan las bibliotecas compartidas, las reglas de dependencia y la organización del repositorio.
 
 ---
 
@@ -12,145 +27,392 @@ Toda la organización del código está gobernada por una única regla verificab
 
 > **Ninguna dependencia de compilación cruza horizontalmente entre módulos de negocio, y ninguna dependencia apunta desde el dominio hacia la infraestructura.**
 
-Si esa regla se rompe en un solo punto, el sistema deja de ser una arquitectura modular orientada a servicios y vuelve a ser el monolito acoplado que el caso de estudio describe como problema. Los nueve diagramas de esta vista existen para hacer esa regla auditable, y la [sección 9](#9-reglas-de-dependencia-verificables-en-integración-continua) la convierte en pruebas automáticas del pipeline.
+Si esa regla se rompe en un solo punto, el sistema deja de ser una arquitectura modular orientada a servicios y vuelve a ser el monolito acoplado que el caso de estudio describe como problema. Los diagramas de esta vista existen para hacer esa regla auditable, y la [sección 11](#11-reglas-de-dependencia-verificables-en-integración-continua) la convierte en pruebas automáticas del pipeline.
 
 ---
 
 ## Convención de notación
 
-Mermaid.js no implementa el diagrama UML de componentes. Se emplea `flowchart` con esta convención:
+Mermaid.js no implementa nativamente los diagramas UML de paquetes y componentes. Se emplea `flowchart` con esta convención, uniforme en toda la vista:
 
 | Elemento UML | Representación |
 |---|---|
-| Paquete / capa | `subgraph` |
+| Capa | `subgraph` con banda de color |
+| Paquete | `subgraph` o rectángulo con nombre en notación de punto (`ups.matricula`) |
 | Componente | Rectángulo con estereotipo en cursiva |
 | Interfaz provista | Nodo hexagonal `{{ }}` con prefijo `I` |
-| Dependencia de compilación | Flecha continua `-->` |
-| Dependencia de ejecución (REST/cola) | Flecha punteada `-.->` con etiqueta del protocolo |
+| Dependencia de compilación | Flecha continua `-->` (o `==>` para resaltar capas) |
+| Relación de importación entre paquetes | Flecha punteada `-.->` etiquetada `«import»` |
+| Dependencia de ejecución síncrona (REST) | Flecha punteada `-.->` etiquetada `REST` |
+| Dependencia de ejecución asíncrona (cola) | Flecha punteada `-.->` etiquetada `evento` |
 | Base de datos | Nodo cilíndrico `[( )]` |
 
 ---
 
-## 1. Diagrama de capas y paquetes
+## 1. Diagrama de capas
 
-Organización global del código en las cuatro capas definidas por la arquitectura.
+Muestra las cuatro capas de la arquitectura y **la única dirección permitida de dependencia**: siempre hacia abajo. Ninguna capa conoce a la que está por encima de ella.
 
 ```mermaid
 flowchart TB
     subgraph L1["CAPA 1 · Presentación y Borde"]
         direction LR
-        WEB["ups.web.spa<br/><i>Portal web</i>"]:::c1
-        subgraph GWP["ups.gateway"]
-            direction TB
-            G1["gateway.routing"]:::c1
-            G2["gateway.security<br/><i>OAuth2/OIDC · RBAC</i>"]:::c1
-            G3["gateway.ratelimit"]:::c1
-            G4["gateway.waf"]:::c1
-            G5["gateway.audit"]:::c1
-        end
+        L1A["ups.web.spa<br/><i>Portal web</i>"]:::c1
+        L1B["ups.gateway<br/><i>Enrutamiento · Seguridad · Rate limit · WAF</i>"]:::c1
     end
 
     subgraph L2["CAPA 2 · Aplicación — Módulos de negocio"]
         direction LR
-        M1["ups.identidad<br/><b>RF-01</b>"]:::c2
-        M2["ups.matricula<br/><b>RF-02</b>"]:::c2
-        M3["ups.academico<br/><b>RF-03</b>"]:::c2
-        M4["ups.evaluacion<br/><b>RF-04</b>"]:::c2
-        M5["ups.integracion<br/><b>RF-05</b>"]:::c2
+        L2A["ups.identidad"]:::c2
+        L2B["ups.matricula"]:::c2
+        L2C["ups.academico"]:::c2
+        L2D["ups.evaluacion"]:::c2
+        L2E["ups.integracion"]:::c2
     end
 
     subgraph L3["CAPA 3 · Comunicación"]
         direction LR
-        S1["ups.shared.rest<br/><i>Cliente HTTP · CircuitBreaker · Reintentos</i>"]:::c3
-        S2["ups.shared.messaging<br/><i>Publicador · Consumidor</i>"]:::c3
-        S3["ups.shared.contracts<br/><i>DTOs · Eventos · Identificadores</i>"]:::c3
-        S4["ups.shared.observability<br/><i>Registros · Métricas · Trazas</i>"]:::c3
-        S5["ups.shared.security<br/><i>Contexto de identidad</i>"]:::c3
+        L3A["ups.shared.rest"]:::c3
+        L3B["ups.shared.messaging"]:::c3
+        L3C["ups.shared.contracts"]:::c3
+        L3D["ups.shared.observability"]:::c3
+        L3E["ups.shared.security"]:::c3
     end
 
     subgraph L4["CAPA 4 · Datos"]
         direction LR
-        D1[("db_identidad")]:::c4
-        D2[("db_matricula")]:::c4
-        D3[("db_academico")]:::c4
-        D4[("db_evaluacion")]:::c4
-        D5[("db_integracion")]:::c4
-        MQ["Cola de mensajes<br/><i>servicio gestionado</i>"]:::c4
+        L4A[("5 bases de datos<br/>una por módulo")]:::c4
+        L4B["Cola de mensajes<br/><i>servicio gestionado</i>"]:::c4
     end
 
-    subgraph EXT["Sistemas externos"]
-        direction LR
-        E1["Pasarela de Pagos"]:::ce
-        E2["Biblioteca Digital"]:::ce
-        E3["Gestión Documental"]:::ce
-        E4["Proveedor OIDC"]:::ce
-    end
+    L1 ==>|"invoca vía API"| L2
+    L2 ==>|"usa"| L3
+    L2 ==>|"persiste en"| L4
+    L3 ==>|"transporta hacia"| L4
 
-    WEB --> GWP
-    GWP --> M1
-    GWP --> M2
-    GWP --> M3
-    GWP --> M4
-    GWP --> M5
-    G2 -.valida token.-> E4
-
-    M1 --> S1
-    M1 --> S3
-    M1 --> S4
-    M1 --> S5
-    M2 --> S1
-    M2 --> S2
-    M2 --> S3
-    M2 --> S4
-    M2 --> S5
-    M3 --> S1
-    M3 --> S3
-    M3 --> S4
-    M3 --> S5
-    M4 --> S2
-    M4 --> S3
-    M4 --> S4
-    M4 --> S5
-    M5 --> S1
-    M5 --> S2
-    M5 --> S3
-    M5 --> S4
-    M5 --> S5
-
-    M1 --> D1
-    M2 --> D2
-    M3 --> D3
-    M4 --> D4
-    M5 --> D5
-    S2 --> MQ
-
-    M5 --> E1
-    M5 --> E2
-    M5 --> E3
-
-    M2 -.REST.-> M3
-    M2 -.REST.-> M5
-    M4 -.REST.-> M3
-    M5 -.REST.-> M2
+    NOTA["Regla de capas: las dependencias solo fluyen hacia abajo.<br/>Ninguna capa referencia a una capa superior."]:::nota
 
     classDef c1 fill:#E8F0FE,stroke:#1967D2,color:#000
     classDef c2 fill:#E6F4EA,stroke:#137333,color:#000
     classDef c3 fill:#FEF7E0,stroke:#EA8600,color:#000
     classDef c4 fill:#F3E8FD,stroke:#8430CE,color:#000
-    classDef ce fill:#FCE8E6,stroke:#C5221F,color:#000
+    classDef nota fill:#FFFFFF,stroke:#5F6368,color:#000,stroke-dasharray:4 3
 ```
 
 ### Justificación
 
-**Las cuatro capas corresponden exactamente a las definidas en la arquitectura**, sin fusionarlas ni inventar nuevas. La capa de Comunicación es la más fácil de omitir y la más importante: es la que materializa la decisión de combinar REST síncrono con cola de mensajes. Sin ella, cada módulo implementaría su propio cliente HTTP y su propia política de reintentos, y el Circuit Breaker sería inconsistente entre módulos.
+**Las cuatro capas corresponden exactamente a las definidas en la arquitectura**, sin fusionarlas ni inventar nuevas. La capa de Comunicación (capa 3) es la más fácil de omitir y la más importante: materializa la decisión de combinar REST síncrono con cola de mensajes. Sin ella, cada módulo implementaría su propio cliente HTTP y su propia política de reintentos, y el Circuit Breaker sería inconsistente entre módulos.
 
-**Las flechas entre módulos de negocio son punteadas y llevan etiqueta de protocolo.** `ups.matricula ⇢ ups.academico` es una dependencia **de ejecución**, no de compilación. En el repositorio, `ups.matricula` no declara a `ups.academico` en su archivo de dependencias: declara `ups.shared.contracts` y `ups.shared.rest`. Esta distinción es lo que permite que los cinco módulos se compilen, prueben y desplieguen por separado.
-
-**La seguridad vive en el Gateway.** `gateway.security` es el único paquete que valida tokens contra el proveedor OIDC. Los módulos reciben la identidad ya validada mediante `ups.shared.security`, que solo transporta el contexto — no lo verifica.
+**La dirección de dependencia es estricta y unidireccional.** La capa de Presentación conoce a la de Aplicación, pero ningún módulo de negocio conoce al Gateway. Esto es lo que permite que un módulo se pruebe sin levantar el borde, y sostiene la decisión de que la seguridad resida únicamente en el Gateway.
 
 ---
 
-## 2. Estructura interna — Módulo Identidad y Accesos (RF-01)
+## 2. Diagrama de paquetes
+
+Muestra los paquetes de código y sus relaciones de importación. Cada módulo desplegable contiene los mismos tres subpaquetes internos (`adapter`, `application`, `domain`); todos importan de los paquetes compartidos `ups.shared.*`, y **ninguno importa a otro módulo de negocio**.
+
+```mermaid
+flowchart TB
+    subgraph BORDE["ups.gateway"]
+        direction LR
+        PG1["gateway.routing"]:::gw
+        PG2["gateway.security"]:::gw
+        PG3["gateway.ratelimit"]:::gw
+        PG4["gateway.waf"]:::gw
+        PG5["gateway.audit"]:::gw
+    end
+
+    subgraph MODS["Módulos de negocio · misma estructura de paquetes"]
+        direction LR
+        subgraph MOD1["ups.matricula"]
+            direction TB
+            P1A["adapter"]:::adp
+            P1B["application"]:::app
+            P1C["domain"]:::dom
+            P1A -.->|«access»| P1B
+            P1B -.->|«access»| P1C
+        end
+        subgraph MOD2["ups.academico"]
+            direction TB
+            P2A["adapter"]:::adp
+            P2B["application"]:::app
+            P2C["domain"]:::dom
+            P2A -.->|«access»| P2B
+            P2B -.->|«access»| P2C
+        end
+        subgraph MOD3["ups.evaluacion · ups.identidad · ups.integracion"]
+            direction TB
+            P3A["adapter"]:::adp
+            P3B["application"]:::app
+            P3C["domain"]:::dom
+            P3A -.->|«access»| P3B
+            P3B -.->|«access»| P3C
+        end
+    end
+
+    subgraph SHARED["Paquetes compartidos · ups.shared"]
+        direction LR
+        SH1["shared.rest"]:::sh
+        SH2["shared.messaging"]:::sh
+        SH3["shared.contracts"]:::sh
+        SH4["shared.observability"]:::sh
+        SH5["shared.security"]:::sh
+    end
+
+    BORDE -.->|«import»| SHARED
+    MOD1 -.->|«import»| SHARED
+    MOD2 -.->|«import»| SHARED
+    MOD3 -.->|«import»| SHARED
+
+    PROH["✗ Prohibido: ups.matricula «import» ups.academico<br/>Los módulos NO se importan entre sí (regla R2)"]:::proh
+    MOD1 -.->|✗| MOD2
+
+    classDef gw fill:#E8F0FE,stroke:#1967D2,color:#000
+    classDef adp fill:#E8F0FE,stroke:#1967D2,color:#000
+    classDef app fill:#FEF7E0,stroke:#EA8600,color:#000
+    classDef dom fill:#E6F4EA,stroke:#137333,stroke-width:2px,color:#000
+    classDef sh fill:#FEF7E0,stroke:#EA8600,color:#000
+    classDef proh fill:#FCE8E6,stroke:#C5221F,color:#000,stroke-dasharray:4 3
+```
+
+### Justificación
+
+**El diagrama de paquetes expresa la organización del código fuente**, no su comportamiento en ejecución. Su relación clave es la de importación (`«import»`), que es exactamente lo que un archivo de dependencias declara. La ausencia de una flecha de importación entre `ups.matricula` y `ups.academico` es lo que permite compilarlos y desplegarlos por separado.
+
+**Dentro de cada módulo, las importaciones apuntan hacia el dominio.** `adapter` accede a `application`, y `application` accede a `domain`; nunca al revés. El paquete `domain` no importa ningún paquete externo, lo que permite probar las reglas de negocio sin infraestructura.
+
+**Todos los módulos importan de `ups.shared`, pero `ups.shared` no importa de ningún módulo.** Es una dependencia estrictamente unidireccional: los paquetes compartidos son hojas del grafo de importación, lo que evita el ciclo que convertiría la biblioteca compartida en un monolito distribuido.
+
+---
+
+## 3. Diagrama de componentes
+
+Muestra los componentes del sistema con las **interfaces que provee cada uno** (hexágonos `I...`) y las que **consume de otros**. A diferencia del diagrama de paquetes —que es organización de código—, este muestra las unidades lógicas en ejecución y sus contratos.
+
+```mermaid
+flowchart TB
+    USR["Estudiante · Docente · Coordinador<br/>Tesorería · Directivos"]:::act
+    SPA["Portal Web SPA<br/><i>«component»</i>"]:::c1
+    GW["API Gateway<br/><i>«component»</i>"]:::c1
+
+    subgraph IF1[" "]
+        I1{{"IIdentidad"}}:::itf
+        I2{{"IAuditoria"}}:::itf
+    end
+    MID["Módulo Identidad<br/><i>«component» · RF-01</i>"]:::c2
+
+    subgraph IF2[" "]
+        I3{{"IMatricula"}}:::itf
+        I4{{"IExpediente"}}:::itf
+    end
+    MMAT["Módulo Matrícula<br/><i>«component» · RF-02</i>"]:::c2
+
+    subgraph IF3[" "]
+        I5{{"IOfertaAcademica"}}:::itf
+        I6{{"IDisponibilidadCupo"}}:::itf
+        I7{{"IReservaAula"}}:::itf
+    end
+    MACA["Módulo Gestión Académica<br/><i>«component» · RF-03</i>"]:::c2
+
+    subgraph IF4[" "]
+        I8{{"ICalificaciones"}}:::itf
+        I9{{"IActas"}}:::itf
+    end
+    MEVA["Módulo Evaluación<br/><i>«component» · RF-04</i>"]:::c2
+
+    subgraph IF5[" "]
+        I10{{"IEstadoFinanciero"}}:::itf
+        I11{{"IDocumentos"}}:::itf
+        I12{{"IBiblioteca"}}:::itf
+        I13{{"IAnalitica"}}:::itf
+    end
+    MINT["Módulo Integración<br/><i>«component» · RF-05</i>"]:::c2
+
+    MQ["Cola de Mensajes<br/><i>«managed service»</i>"]:::c3
+    OBS["Observabilidad<br/><i>«managed service»</i>"]:::c3
+
+    E1["Proveedor OIDC"]:::ce
+    E2["Pasarela de Pagos"]:::ce
+    E3["Biblioteca Digital"]:::ce
+    E4["Gestión Documental"]:::ce
+
+    USR --> SPA
+    SPA -->|HTTPS/TLS| GW
+
+    MID --- I1
+    MID --- I2
+    MMAT --- I3
+    MMAT --- I4
+    MACA --- I5
+    MACA --- I6
+    MACA --- I7
+    MEVA --- I8
+    MEVA --- I9
+    MINT --- I10
+    MINT --- I11
+    MINT --- I12
+    MINT --- I13
+
+    GW -.usa.-> I1
+    GW -.usa.-> I3
+    GW -.usa.-> I4
+    GW -.usa.-> I5
+    GW -.usa.-> I7
+    GW -.usa.-> I8
+    GW -.usa.-> I9
+    GW -.usa.-> I11
+    GW -.usa.-> I12
+    GW -.usa.-> I13
+    GW -.valida.-> E1
+
+    MMAT -.usa.-> I6
+    MMAT -.usa.-> I10
+    MEVA -.usa.-> I5
+    MINT -.usa.-> I4
+    MINT -.usa.-> I7
+
+    MMAT -.publica y consume.-> MQ
+    MEVA -.publica.-> MQ
+    MACA -.publica.-> MQ
+    MINT -.publica y consume.-> MQ
+
+    MID -.telemetría.-> OBS
+    MMAT -.telemetría.-> OBS
+    MACA -.telemetría.-> OBS
+    MEVA -.telemetría.-> OBS
+    MINT -.telemetría.-> OBS
+    GW -.telemetría.-> OBS
+
+    MINT --> E2
+    MINT --> E3
+    MINT --> E4
+
+    classDef act fill:#F5F5F5,stroke:#5F6368,color:#000
+    classDef c1 fill:#E8F0FE,stroke:#1967D2,color:#000
+    classDef c2 fill:#E6F4EA,stroke:#137333,color:#000
+    classDef c3 fill:#F3E8FD,stroke:#8430CE,color:#000
+    classDef itf fill:#FEF7E0,stroke:#EA8600,color:#000
+    classDef ce fill:#FCE8E6,stroke:#C5221F,color:#000
+```
+
+### Catálogo de interfaces
+
+| Interfaz | Provista por | Consumida por | Operaciones principales |
+|---|---|---|---|
+| `IIdentidad` | Identidad | Gateway | Autenticar, obtener perfil y scopes |
+| `IAuditoria` | Identidad | Gateway, todos los módulos | Registrar evento de acceso |
+| `IMatricula` | Matrícula | Gateway | Inscribir, modificar, cancelar |
+| `IExpediente` | Matrícula | Gateway, Integración | Consultar historial, promedio, avance |
+| `IOfertaAcademica` | Académico | Gateway, Evaluación | Consultar planes, grupos, docente titular |
+| `IDisponibilidadCupo` | Académico | Matrícula | Verificar, reservar, liberar cupo |
+| `IReservaAula` | Académico | Gateway, Integración | Reservar espacio, consultar ocupación |
+| `ICalificaciones` | Evaluación | Gateway | Registrar, publicar, consultar notas |
+| `IActas` | Evaluación | Gateway | Abrir, cerrar, reabrir acta |
+| `IEstadoFinanciero` | Integración | Matrícula | Verificar paz y salvo, saldo |
+| `IDocumentos` | Integración | Gateway | Emitir, archivar, verificar certificados |
+| `IBiblioteca` | Integración | Gateway | Buscar recursos, otorgar acceso |
+| `IAnalitica` | Integración | Gateway | Consultar indicadores directivos |
+
+### Justificación
+
+**Las interfaces se nombran por capacidad de negocio, no por entidad.** `IDisponibilidadCupo` en lugar de `IGrupoCRUD`. Una interfaz orientada a capacidad expone la operación mínima que el consumidor necesita y oculta el modelo interno del proveedor. `IGrupoCRUD` filtraría la estructura de datos de Gestión Académica hacia Matrícula y reconstruiría el acoplamiento que la arquitectura busca evitar.
+
+**Un componente provee varias interfaces segregadas.** El módulo de Matrícula provee `IMatricula` (escritura, consumida por el estudiante) e `IExpediente` (lectura, consumida por los paneles). Segregarlas permite aplicar políticas RBAC distintas en el Gateway y escalar o cachear la lectura sin tocar la escritura.
+
+**La cola aparece como componente, no como flecha.** Esto muestra que el módulo de Evaluación publica eventos sin conocer a ningún consumidor. Ese anonimato es la definición operativa del desacople de RF-04: agregar un consumidor de analítica que reaccione a las notas no requiere modificar ni redesplegar Evaluación.
+
+---
+
+## 4. Diagrama de dependencias entre componentes
+
+Muestra el **grafo dirigido de dependencias** entre componentes, clasificado por tipo. Es la vista que responde a la pregunta *"¿quién depende de quién y de qué forma?"*, y la que permite verificar que no existan ciclos de dependencia síncrona.
+
+```mermaid
+flowchart LR
+    SPA["Portal Web SPA"]:::cli
+    GW["API Gateway"]:::edge
+    MID["ups.identidad"]:::mod
+    MMAT["ups.matricula"]:::mod
+    MACA["ups.academico"]:::mod
+    MEVA["ups.evaluacion"]:::mod
+    MINT["ups.integracion"]:::mod
+    SHR["ups.shared.*<br/><i>bibliotecas compartidas</i>"]:::shared
+    MQ["Cola de mensajes"]:::infra
+    EXT["Sistemas externos<br/>Pagos · Biblioteca · Documental · OIDC"]:::ext
+
+    SPA -->|HTTP| GW
+    GW -->|REST| MID
+    GW -->|REST| MMAT
+    GW -->|REST| MACA
+    GW -->|REST| MEVA
+    GW -->|REST| MINT
+
+    MMAT -.REST.-> MACA
+    MMAT -.REST.-> MINT
+    MEVA -.REST.-> MACA
+    MINT -.REST.-> MMAT
+
+    MMAT -.evento.-> MQ
+    MACA -.evento.-> MQ
+    MEVA -.evento.-> MQ
+    MINT -.evento.-> MQ
+    MQ -.entrega.-> MMAT
+    MQ -.entrega.-> MINT
+
+    MID ==>|compilación| SHR
+    MMAT ==>|compilación| SHR
+    MACA ==>|compilación| SHR
+    MEVA ==>|compilación| SHR
+    MINT ==>|compilación| SHR
+    GW ==>|compilación| SHR
+
+    MINT -->|REST| EXT
+    GW -->|OIDC| EXT
+
+    classDef cli fill:#F5F5F5,stroke:#5F6368,color:#000
+    classDef edge fill:#E8F0FE,stroke:#1967D2,color:#000
+    classDef mod fill:#E6F4EA,stroke:#137333,color:#000
+    classDef shared fill:#FEF7E0,stroke:#EA8600,color:#000
+    classDef infra fill:#F3E8FD,stroke:#8430CE,color:#000
+    classDef ext fill:#FCE8E6,stroke:#C5221F,color:#000
+```
+
+### Tipos de dependencia representados
+
+| Estilo de flecha | Tipo de dependencia | Momento | Ejemplo |
+|---|---|---|---|
+| `==>` continua gruesa | Compilación | Al construir | Todo módulo → `ups.shared.*` |
+| `-->` continua | Invocación de borde o externa | Ejecución | Gateway → módulos; Integración → pasarela |
+| `-.->` con `REST` | Ejecución síncrona entre módulos | Ejecución | Matrícula → Académico (cupo) |
+| `-.->` con `evento` | Ejecución asíncrona vía cola | Ejecución diferida | Evaluación → Cola |
+
+### Matriz de dependencias
+
+| Componente | Depende de (compilación) | Depende de (REST síncrono) | Publica o consume (cola) |
+|---|---|---|---|
+| **Gateway** | `shared.*` | Los 5 módulos, OIDC | — |
+| **Identidad** | `shared.*` | — | — |
+| **Matrícula** | `shared.*` | Académico, Integración | Publica y consume |
+| **Académico** | `shared.*` | — | Publica |
+| **Evaluación** | `shared.*` | Académico | Publica |
+| **Integración** | `shared.*` | Matrícula, sistemas externos | Publica y consume |
+| **shared.\*** | — | — | — |
+
+### Justificación
+
+**No existe ningún ciclo de dependencia síncrona dentro de una misma cadena de llamadas.** El diagrama muestra una arista `Matrícula → Integración` y otra `Integración → Matrícula`, lo que a primera vista parece un ciclo. No lo es: son **flujos distintos sobre interfaces distintas** que nunca se anidan. Matrícula llama a Integración por `IEstadoFinanciero` durante la inscripción; Integración llama a Matrícula por `IExpediente` durante la emisión de un certificado. Ninguna de las dos operaciones ocurre dentro de la otra, de modo que no puede formarse un interbloqueo ni una cascada de tiempos de espera.
+
+**Las dependencias de compilación forman un grafo acíclico dirigido** cuya única hoja es `ups.shared.*`. Esto es lo que hace posible compilar y desplegar cada módulo por separado, y es exactamente lo que la regla R2 del pipeline verifica automáticamente.
+
+**Identidad es un componente sin dependencias salientes hacia otros módulos.** Solo depende de las bibliotecas compartidas. Esto lo convierte en el componente más estable del sistema, lo cual es deseable porque es del que dependen todos los demás a través del Gateway.
+
+**Integración es el único componente con dependencias hacia sistemas externos.** Concentrar ahí toda la comunicación con terceros reduce la superficie de exposición a un solo componente auditable y permite cambiar un proveedor sin tocar el resto.
+
+---
+
+## 5. Estructura interna — Módulo Identidad y Accesos (RF-01)
+
+> **Nota.** Las secciones 5 a 9 detallan la estructura interna de cada módulo siguiendo la **arquitectura hexagonal** (puertos y adaptadores). Son un complemento a los cuatro diagramas anteriores: muestran cómo se organiza *por dentro* cada componente de la [§3](#3-diagrama-de-componentes).
 
 ```mermaid
 flowchart TB
@@ -224,7 +486,7 @@ flowchart TB
 
 ---
 
-## 3. Estructura interna — Módulo Matrícula y Expediente (RF-02)
+## 6. Estructura interna — Módulo Matrícula y Expediente (RF-02)
 
 ```mermaid
 flowchart TB
@@ -309,7 +571,7 @@ flowchart TB
 
 ---
 
-## 4. Estructura interna — Módulo Gestión Académica (RF-03)
+## 7. Estructura interna — Módulo Gestión Académica (RF-03)
 
 ```mermaid
 flowchart TB
@@ -391,7 +653,7 @@ Este es el único módulo **sin adaptadores de salida REST**: no llama a ningún
 
 ---
 
-## 5. Estructura interna — Módulo Evaluación y Seguimiento (RF-04)
+## 8. Estructura interna — Módulo Evaluación y Seguimiento (RF-04)
 
 ```mermaid
 flowchart TB
@@ -474,7 +736,7 @@ Este módulo **no consume ninguna interfaz síncrona salvo `OfertaAcademicaPort`
 
 ---
 
-## 6. Estructura interna — Módulo Integración Externa y Analítica (RF-05)
+## 9. Estructura interna — Módulo Integración Externa y Analítica (RF-05)
 
 ```mermaid
 flowchart TB
@@ -574,147 +836,7 @@ Es el **único módulo con adaptadores hacia sistemas externos**, y esa concentr
 
 ---
 
-## 7. Diagrama de componentes e interfaces
-
-Vista de las interfaces provistas y requeridas por cada componente del sistema.
-
-```mermaid
-flowchart TB
-    USR["Estudiante · Docente · Coordinador<br/>Tesorería · Directivos"]:::act
-    SPA["Portal Web SPA<br/><i>componente</i>"]:::c1
-    GW["API Gateway<br/><i>componente</i>"]:::c1
-
-    subgraph IF1[" "]
-        I1{{"IIdentidad"}}:::itf
-        I2{{"IAuditoria"}}:::itf
-    end
-    MID["Módulo Identidad<br/><i>RF-01</i>"]:::c2
-
-    subgraph IF2[" "]
-        I3{{"IMatricula"}}:::itf
-        I4{{"IExpediente"}}:::itf
-    end
-    MMAT["Módulo Matrícula<br/><i>RF-02</i>"]:::c2
-
-    subgraph IF3[" "]
-        I5{{"IOfertaAcademica"}}:::itf
-        I6{{"IDisponibilidadCupo"}}:::itf
-        I7{{"IReservaAula"}}:::itf
-    end
-    MACA["Módulo Gestión Académica<br/><i>RF-03</i>"]:::c2
-
-    subgraph IF4[" "]
-        I8{{"ICalificaciones"}}:::itf
-        I9{{"IActas"}}:::itf
-    end
-    MEVA["Módulo Evaluación<br/><i>RF-04</i>"]:::c2
-
-    subgraph IF5[" "]
-        I10{{"IEstadoFinanciero"}}:::itf
-        I11{{"IDocumentos"}}:::itf
-        I12{{"IBiblioteca"}}:::itf
-        I13{{"IAnalitica"}}:::itf
-    end
-    MINT["Módulo Integración<br/><i>RF-05</i>"]:::c2
-
-    MQ["Cola de Mensajes<br/><i>servicio gestionado</i>"]:::c3
-    OBS["Observabilidad<br/><i>servicio gestionado</i>"]:::c3
-
-    E1["Proveedor OIDC"]:::ce
-    E2["Pasarela de Pagos"]:::ce
-    E3["Biblioteca Digital"]:::ce
-    E4["Gestión Documental"]:::ce
-
-    USR --> SPA
-    SPA -->|HTTPS/TLS| GW
-
-    MID --- I1
-    MID --- I2
-    MMAT --- I3
-    MMAT --- I4
-    MACA --- I5
-    MACA --- I6
-    MACA --- I7
-    MEVA --- I8
-    MEVA --- I9
-    MINT --- I10
-    MINT --- I11
-    MINT --- I12
-    MINT --- I13
-
-    GW -.usa.-> I1
-    GW -.usa.-> I3
-    GW -.usa.-> I4
-    GW -.usa.-> I5
-    GW -.usa.-> I7
-    GW -.usa.-> I8
-    GW -.usa.-> I9
-    GW -.usa.-> I11
-    GW -.usa.-> I12
-    GW -.usa.-> I13
-    GW -.valida.-> E1
-
-    MMAT -.usa.-> I6
-    MMAT -.usa.-> I10
-    MEVA -.usa.-> I5
-    MINT -.usa.-> I4
-    MINT -.usa.-> I7
-
-    MMAT -.publica y consume.-> MQ
-    MEVA -.publica.-> MQ
-    MACA -.publica.-> MQ
-    MINT -.publica y consume.-> MQ
-
-    MID -.telemetría.-> OBS
-    MMAT -.telemetría.-> OBS
-    MACA -.telemetría.-> OBS
-    MEVA -.telemetría.-> OBS
-    MINT -.telemetría.-> OBS
-    GW -.telemetría.-> OBS
-
-    MINT --> E2
-    MINT --> E3
-    MINT --> E4
-
-    classDef act fill:#F5F5F5,stroke:#5F6368,color:#000
-    classDef c1 fill:#E8F0FE,stroke:#1967D2,color:#000
-    classDef c2 fill:#E6F4EA,stroke:#137333,color:#000
-    classDef c3 fill:#F3E8FD,stroke:#8430CE,color:#000
-    classDef itf fill:#FEF7E0,stroke:#EA8600,color:#000
-    classDef ce fill:#FCE8E6,stroke:#C5221F,color:#000
-```
-
-### Catálogo de interfaces
-
-| Interfaz | Provista por | Consumida por | Operaciones principales |
-|---|---|---|---|
-| `IIdentidad` | Identidad | Gateway | Autenticar, obtener perfil y scopes |
-| `IAuditoria` | Identidad | Gateway, todos los módulos | Registrar evento de acceso |
-| `IMatricula` | Matrícula | Gateway | Inscribir, modificar, cancelar |
-| `IExpediente` | Matrícula | Gateway, Integración | Consultar historial, promedio, avance |
-| `IOfertaAcademica` | Académico | Gateway, Evaluación | Consultar planes, grupos, docente titular |
-| `IDisponibilidadCupo` | Académico | Matrícula | Verificar, reservar, liberar cupo |
-| `IReservaAula` | Académico | Gateway, Integración | Reservar espacio, consultar ocupación |
-| `ICalificaciones` | Evaluación | Gateway | Registrar, publicar, consultar notas |
-| `IActas` | Evaluación | Gateway | Abrir, cerrar, reabrir acta |
-| `IEstadoFinanciero` | Integración | Matrícula | Verificar paz y salvo, saldo |
-| `IDocumentos` | Integración | Gateway | Emitir, archivar, verificar certificados |
-| `IBiblioteca` | Integración | Gateway | Buscar recursos, otorgar acceso |
-| `IAnalitica` | Integración | Gateway | Consultar indicadores directivos |
-
-### Justificación
-
-**Las interfaces se nombran por capacidad de negocio, no por entidad.** `IDisponibilidadCupo` en lugar de `IGrupoCRUD`. Una interfaz orientada a capacidad expone la operación mínima que el consumidor necesita y oculta el modelo interno del proveedor. `IGrupoCRUD` filtraría la estructura de datos de Gestión Académica hacia Matrícula y reconstruiría el acoplamiento que la arquitectura busca evitar.
-
-**Un componente provee varias interfaces segregadas.** El módulo de Matrícula provee `IMatricula` (escritura, consumida por el estudiante) e `IExpediente` (lectura, consumida por los paneles). Segregarlas permite aplicar políticas RBAC distintas en el Gateway y escalar o cachear la lectura sin tocar la escritura.
-
-**La cola aparece como componente, no como flecha.** Esto muestra que el módulo de Evaluación publica eventos sin conocer a ningún consumidor. Ese anonimato es la definición operativa del desacople de RF-04: agregar un consumidor de analítica que reaccione a las notas no requiere modificar ni redesplegar Evaluación.
-
-**El Gateway también reporta telemetría.** Es el componente cuya telemetría más importa —contiene los rechazos 403 y 429— y el más fácil de olvidar.
-
----
-
-## 8. Bibliotecas compartidas
+## 10. Bibliotecas compartidas
 
 ```mermaid
 flowchart TB
@@ -782,7 +904,7 @@ flowchart TB
 
 ---
 
-## 9. Reglas de dependencia verificables en integración continua
+## 11. Reglas de dependencia verificables en integración continua
 
 ```mermaid
 flowchart LR
@@ -845,7 +967,7 @@ flowchart LR
 
 ---
 
-## 10. Organización del repositorio
+## 12. Organización del repositorio
 
 ```
 ups-connect/
@@ -914,12 +1036,14 @@ ups-connect/
 
 | Elemento arquitectónico | Materialización en el código |
 |---|---|
-| Cuatro capas | Diagrama 1 |
-| Cinco módulos con API REST propia | 13 interfaces provistas, diagrama 7 |
+| Cuatro capas | Diagrama de capas (§1) |
+| Organización de paquetes sin acoplamiento cruzado | Diagrama de paquetes (§2), regla R2 |
+| Cinco módulos con API REST propia | 13 interfaces provistas, diagrama de componentes (§3) |
+| Ausencia de ciclos de dependencia síncrona | Diagrama de dependencias (§4) |
 | Base de datos por módulo | Regla R6, ausencia de aristas cruzadas |
 | Adaptadores desacoplados (RF-05) | Puertos de salida en los 5 módulos, regla R3 |
 | Circuit Breaker (RNF-04) | `shared.rest`, regla R4 |
-| Cola para casos puntuales | `shared.messaging`, diagrama 8 |
+| Cola para casos puntuales | `shared.messaging`, diagrama de bibliotecas (§10) |
 | Observabilidad centralizada (RNF-05) | `shared.observability`, 6 consumidores |
 | Autenticación centralizada (RF-01) | `gateway.security` como único validador |
 | Fin del acoplamiento heredado | Reglas R1, R2, R5, R8 verificadas en CI |
