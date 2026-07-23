@@ -32,6 +32,7 @@
 |---|---|---|
 | **Decisiones Arquitectónicas** | [06-decisiones-arquitectonicas.md](docs/06-decisiones-arquitectonicas.md) | 16 ADR + mapa de dependencias | ¿Por qué se decidió así y qué se descartó? |
 | **Riesgos y Mitigación** | [07-riesgos-mitigacion.md](docs/07-riesgos-mitigacion.md) | 18 riesgos + matriz de exposición | ¿Qué puede salir mal y cómo se controla? |
+| **Glosario de Términos** | [08-glosario.md](docs/08-glosario.md) | 46 términos | ¿Qué significa cada término técnico? |
 
 **Total: 55 diagramas.** Todos los módulos del sistema están documentados con el mismo nivel de detalle.
 
@@ -225,7 +226,8 @@ doc-caso-estudio/
     ├── 04-vista-desarrollo.md           ← Vista 3
     ├── 05-vista-fisica.md               ← Vista 4
     ├── 06-decisiones-arquitectonicas.md ← Registro de decisiones (ADR)
-    └── 07-riesgos-mitigacion.md         ← Registro de riesgos
+    ├── 07-riesgos-mitigacion.md         ← Registro de riesgos
+    └── 08-glosario.md                    ← Glosario de términos (46)
 ```
 
 ---

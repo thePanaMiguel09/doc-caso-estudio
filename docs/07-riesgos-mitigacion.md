@@ -822,4 +822,4 @@ Estos riesgos residuales están registrados para que futuras iteraciones no los 
 
 | ← Anterior | Índice | Siguiente → |
 |---|---|---|
-| [Decisiones Arquitectónicas](06-decisiones-arquitectonicas.md) | [README](../README.md) | — |
+| [Decisiones Arquitectónicas](06-decisiones-arquitectonicas.md) | [README](../README.md) | [Glosario de Términos](08-glosario.md) |
